@@ -1,0 +1,11 @@
+{% extends '_base.html' %}
+{% block content %}
+    <div class="pr-10 pl-10">
+        <h1 class="text-5xl m-auto justify-center text-center">{{ recipe.title }}</h1>
+        <p class="mt-4">{{ recipe.description }}</p>
+    
+    </div>
+    <div class="flex justify-center aline-center mt-40">
+     <a href="{% url "recipe_list" %}"><button class="btn btn-primary">back</button></a>
+    </div>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends '_base.html' %}
+{% block content %}
+    <div id="recipe_view" class="mx-auto w-10/12 p-8 grid grid-cols-3 gap-3 "></div>
+    <div id="view_detail"></div>
+    <form action="" id="forms" class="grid grid-row3 flex align-center justify-center !hidden">
+        <input
+                type="text"
+                placeholder="Title"
+                name="title"
+                class="input input-bordered input-primary w-full max-w-xs"/>
+
+        <textarea class="textarea" name="description" placeholder="Description"></textarea>
+
+        <button type="submit" class="btn btn-wide">Create</button>
+    </form>
+    <div id="update" class="!hidden"></div>
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        let mainView = document.querySelector("#recipe_view");
+        let formEL = document.querySelector('#forms');
+        let updateEL = document.querySelector('#update');
+        let viewDetailEL = document.querySelector('#view_detail');
+
+
+        function loaded() {
+            formEL.classList.toggle("!hidden")
+                formEL.title.value="";
+            formEL.description.value=""
+            viewDetailEL.innerHTML = ""
+            mainView.clear
+            fetch("{% url 'recipe_list' %}", {
+                method: "POST",
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+            }).then(async request => {
+                const recipies = await request.json();
+                console.log(recipies);
+                let c = ""
+                for (const r in recipies) {
+                    console.log(recipies[r].title);
+                    const el = `
+
+
+                    <div class="card bg-base-100 w-96 shadow-xl">
+                        <figure>
+                            <img
+                                    src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                                    alt="Shoes"/>
+                        </figure>
+                        <div class="card-body">
+                            <h2 class="card-title">${recipies[r].title}</h2>
+                            <div class="card-actions justify-end">
+                                    <button onclick="update_form(this)" id='update'class="btn btn-success " value="${recipies[r].id}">update</button>
+                                    <button   onclick="del(this)" id='delete' class="btn btn-error" value="${recipies[r].id}">delete</button>
+                                    <button onclick="view(this)" value="${recipies[r].id}" class="btn btn-primary">view</button>   
+                            </div>
+                        </div>
+                    </div>
+                    `
+                    c += el
+                }
+                mainView.innerHTML = c
+
+            })
+
+        }
+
+        function del(value) {
+
+            if (confirm("Are you sure about this?")) {
+                fetch(`delete/${value.value}`, {
+                    method: "POST",
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                }).then(async re => {
+                    await re.text()
+                }).catch(() => {
+
+                }).finally(() => {
+                    formEL.classList.toggle("!hidden")
+                    loaded()
+                })
+            }
+
+        }
+
+        document.addEventListener("DOMContentLoaded", (event) => {
+            event.preventDefault()
+            loaded()
+        });
+
+        formEL.addEventListener('submit', function (event) {
+            event.preventDefault();
+            let form = event.target;
+            let data = new FormData(form)
+            console.log(form.title)
+            console.log(form.description)
+            if ((!(form.title.value === "")) && (!(form.description.value === ""))) {
+
+                fetch('{% url 'recipe_create' %}', {
+                    method: "POST",
+                    body: data,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                }).then(async result => {
+                    await result
+                }).finally(() => {
+                    formEL.classList.toggle("!hidden")
+                    loaded();
+
+                })
+            }
+        });
+
+
+        function update_form(value) {
+
+
+            fetch(`update/${value.value}`, {
+                method: "GET",
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+                .then(async request => {
+                    const r = await request.json()
+                    console.log(r[0].title)
+                    const el = `    <form action="" id="forms_update" class="grid grid-row3 flex align-center justify-center ">
+                                  <input
+                                          type="text"
+                                          placeholder=""
+                                          name="title"
+                                          value="${r[0].title}""
+                                          class="input input-bordered input-primary w-full max-w-xs"/>
+
+                                  <textarea class="textarea" name="description" placeholder="Description">${r[0].description}</textarea>
+
+                                  <button onclick="f(this)" value="${r[0].id}" class="btn btn-success">update</button>
+                              </form>`
+
+                    updateEL.innerHTML = el
+                    formEL.classList.toggle("!hidden");
+                    updateEL.classList.toggle("!hidden");
+
+                }).finally(() => {
+
+            })
+        }
+
+        function f(value) {
+            let formUpdateEL = document.querySelector('#forms_update');
+            formUpdateEL.addEventListener('submit', (event) => {
+                event.preventDefault()
+                if (confirm("Are you sure about this?")) {
+                    let form = event.target;
+                    console.log(form.title)
+                    console.log(form.description)
+                    let data = new FormData(form);
+                    console.log()
+                    fetch(`update/${value.value}`, {
+                        method: "POST",
+                        body: data,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                    }).then(async result => {
+                        await result
+                    }).finally(() => {
+                        updateEL.classList.toggle("!hidden");
+
+                        loaded();
+
+                    })
+                } else {
+                    updateEL.classList.toggle("!hidden");
+                    formEL.classList.toggle('!hidden');
+                }
+            })
+
+        }
+
+        function view(value) {
+            formEL.classList.toggle('!hidden');
+            fetch(`view/${value.value}`, {
+                method: "Post",
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            }).then(async response => {
+                const data = await response.json();
+                mainView.innerHTML = ""
+                console.log(data)
+                viewDetailEL.innerHTML = `
+                    <div class="pr-10 pl-10">
+                        <h1 class="text-5xl m-auto justify-center text-center">${data.title}</h1>
+
+                        <p class="mt-4">${data.description}</p>
+                    <div/>
+                    <div class="flex justify-center aline-center mt-40">
+                         <button onclick="loaded()" class="btn btn-active btn-secondary">back</button>
+                    <div/>
+                `
+
+            })
+        }
+
+        {#document.querySelector("#delete").addEventListener('clike',(event)=>{event.preventDefault();#}
+        {#    let f=event.target;#}
+        {#    console.log(f)#}
+        {#  #}
+        //
+
+    </script>
+{% endblock %}
