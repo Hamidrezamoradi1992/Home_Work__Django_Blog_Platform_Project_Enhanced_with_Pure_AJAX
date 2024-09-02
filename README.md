@@ -1,0 +1,1 @@
+# -Home_Work__Django_Blog_Platform_Project_Enhanced_with_Pure_AJAX-
